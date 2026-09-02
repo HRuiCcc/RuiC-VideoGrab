@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VideoGrab · 万能视频下载</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='%236366f1'/><path d='M50 22v34m0 0l-14-14m14 14l14-14' stroke='white' stroke-width='9' stroke-linecap='round' stroke-linejoin='round' fill='none'/><rect x='24' y='66' width='52' height='10' rx='5' fill='white'/></svg>">
+<style>
+  :root {
+    --bg: #0a0d14;
+    --panel: #12161f;
+    --panel2: #1a2030;
+    --line: #232b3d;
+    --text: #e8ecf4;
+    --dim: #8b94a7;
+    --accent: #6366f1;
+    --accent2: #22d3ee;
+    --ok: #34d399;
+    --err: #f87171;
+    --warn: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    min-height: 100vh;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(600px 300px at 15% -5%, rgba(99,102,241,.18), transparent 60%),
+      radial-gradient(500px 260px at 85% 0%, rgba(34,211,238,.12), transparent 60%);
+  }
+  .wrap { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 0 20px 60px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: .3px; }
+  .logo .dot { width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: grid; place-items: center; }
+  .logo .dot svg { width: 15px; height: 15px; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .cookie-dot { font-size: 12px; color: var(--dim); background: var(--panel); border: 1px solid var(--line); padding: 5px 10px; border-radius: 999px; display: flex; align-items: center; gap: 6px; }
+  .cookie-dot i { width: 7px; height: 7px; border-radius: 50%; background: #555; display: inline-block; }
+  .cookie-dot.on i { background: var(--ok); }
+  .icon-btn { background: var(--panel); border: 1px solid var(--line); color: var(--dim); width: 34px; height: 34px; border-radius: 10px; cursor: pointer; display: grid; place-items: center; transition: .15s; }
+  .icon-btn:hover { color: var(--text); border-color: var(--accent); }
+  .icon-btn svg { width: 16px; height: 16px; }
+
+  .hero { text-align: center; padding: 46px 0 30px; }
+  .hero h1 { font-size: 34px; font-weight: 800; letter-spacing: .5px; }
+  .hero h1 .grad { background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { color: var(--dim); margin-top: 10px; font-size: 14px; }
+
+  .input-card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 14px; margin-top: 26px; display: flex; gap: 10px; align-items: flex-end; box-shadow: 0 12px 40px rgba(0,0,0,.35); transition: border-color .15s; }
+  .input-card:focus-within { border-color: var(--accent); }
+  .input-card textarea {
+    flex: 1; background: transparent; border: none; outline: none; resize: none;
+    color: var(--text); font-size: 15px; line-height: 1.6; min-height: 26px; max-height: 150px;
+    font-family: inherit; padding: 4px 2px;
+  }
+  .input-card textarea::placeholder { color: #4b5565; }
+  .go-btn {
+    border: none; cursor: pointer; border-radius: 12px; padding: 12px 22px; font-size: 15px; font-weight: 700;
+    color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 6px 20px rgba(99,102,241,.4); transition: transform .1s, box-shadow .15s; white-space: nowrap;
+  }
+  .go-btn:hover { box-shadow: 0 8px 26px rgba(99,102,241,.55); }
+  .go-btn:active { transform: scale(.97); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
+  .chip { font-size: 12px; color: var(--dim); border: 1px solid var(--line); background: var(--panel); padding: 5px 12px; border-radius: 999px; }
+  .chip b { color: var(--text); font-weight: 600; }
+  .hint { color: #566078; font-size: 12px; margin-top: 12px; }
+
+  .stats { display: flex; gap: 8px; justify-content: center; margin: 26px 0 6px; flex-wrap: wrap; }
+  .stat { font-size: 12px; color: var(--dim); background: var(--panel); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; }
+  .stat b { color: var(--text); }
+
+  #list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  .task { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; display: flex; gap: 14px; align-items: center; transition: border-color .2s; }
+  .task:hover { border-color: #33405c; }
+  .task .thumb { width: 64px; height: 64px; border-radius: 12px; background: var(--panel2); flex-shrink: 0; overflow: hidden; display: grid; place-items: center; }
+  .task .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .task .thumb .ph { color: #46506a; }
+  .task .thumb .ph svg { width: 26px; height: 26px; }
+  .task .body { flex: 1; min-width: 0; }
+  .task .top { display: flex; align-items: center; gap: 8px; }
+  .badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px; flex-shrink: 0; }
+  .task .title { font-size: 14px; font-weight: 600; margin-top: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .task .url { font-size: 12px; color: var(--dim); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .task .meta { display: flex; gap: 12px; align-items: center; margin-top: 8px; font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .bar { height: 6px; background: var(--panel2); border-radius: 999px; overflow: hidden; margin-top: 8px; }
+  .bar .fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .4s ease; }
+  .bar.indet .fill { width: 35% !important; animation: slide 1.1s ease-in-out infinite alternate; }
+  @keyframes slide { from { margin-left: 0; } to { margin-left: 65%; } }
+  .task .actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .act { border: 1px solid var(--line); background: var(--panel2); color: var(--text); font-size: 12.5px; font-weight: 600; padding: 8px 14px; border-radius: 10px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: .15s; white-space: nowrap; }
+  .act:hover { border-color: var(--accent); }
+  .act.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: #fff; }
+  .act.danger { color: var(--err); border-color: rgba(248,113,113,.35); }
+  .act.danger:hover { border-color: var(--err); }
+  .err-msg { color: var(--err); font-size: 12.5px; margin-top: 7px; line-height: 1.5; }
+
+  .empty { text-align: center; color: var(--dim); padding: 40px 0; font-size: 13.5px; }
+  .empty .ex { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .empty .ex button { background: var(--panel); color: var(--dim); border: 1px solid var(--line); font-size: 12px; padding: 7px 14px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+  .empty .ex button:hover { color: var(--accent2); border-color: var(--accent); }
+
+  footer { text-align: center; color: #4a5266; font-size: 12px; margin-top: 48px; line-height: 1.8; }
+
+  /* modal */
+  .overlay { position: fixed; inset: 0; background: rgba(4,6,10,.7); backdrop-filter: blur(4px); display: none; place-items: center; z-index: 50; }
+  .overlay.show { display: grid; }
+  .modal { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; width: min(560px, 92vw); padding: 22px; }
+  .modal h3 { font-size: 16px; margin-bottom: 6px; }
+  .modal p { color: var(--dim); font-size: 13px; line-height: 1.7; }
+  .modal textarea { width: 100%; height: 150px; margin-top: 14px; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; color: var(--text); padding: 12px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; outline: none; resize: vertical; }
+  .modal .row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+  .act.ghost { color: var(--dim); background: transparent; }
+
+  .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--panel2); border: 1px solid var(--line); color: var(--text); padding: 10px 20px; border-radius: 12px; font-size: 13.5px; opacity: 0; transition: .25s; z-index: 99; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <span class="dot">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v9m0 0l-4.5-4.5M12 13l4.5-4.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><rect x="5" y="17" width="14" height="3.4" rx="1.7" fill="#fff"/></svg>
+      </span>
+      VideoGrab
+    </div>
+    <div class="header-right">
+      <span class="cookie-dot" id="cookieDot" title="登录态 cookies 配置状态"><i></i>Cookies 未配置</span>
+      <button class="icon-btn" id="settingsBtn" title="设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="hero">
+    <h1>粘贴链接，<span class="grad">一键下载</span></h1>
+    <p>支持 1000+ 视频平台 · 去水印 · 本地保存 · 在线播放</p>
+  </div>
+
+  <div class="input-card">
+    <textarea id="input" rows="1" placeholder="粘贴视频链接到这里，多条链接可一次粘贴（每行一条或直接批量）…" spellcheck="false"></textarea>
+    <button class="go-btn" id="goBtn">开始下载</button>
+  </div>
+
+  <div class="chips" id="chips"></div>
+  <div class="hint" style="text-align:center">Enter 提交 · 支持 YouTube / B站 / 抖音 / TikTok / 小红书 / Instagram / X / 微博 / 快手 等全平台</div>
+
+  <div class="stats" id="stats"></div>
+  <div id="list"></div>
+
+  <footer>
+    下载内容仅供个人学习研究使用，请遵守各平台条款与版权规定<br>
+    抖音 / B站 / YouTube 免登录下载 · 小红书多数笔记免登录 · 高清与粉丝可见内容请点右上角 ⚙ 配置 cookies
+  </footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3>登录态 Cookies 配置</h3>
+    <p>小红书、X、抖音、YouTube 等平台的高清/无水印下载需要登录态。<br>
+    ① 浏览器安装 <b>Cookie-Editor</b> 类插件；② 登录对应平台；③ 导出 <b>Netscape 格式</b>；④ 粘贴到下方保存。多个平台可合并粘贴。</p>
+    <textarea id="cookieInput" placeholder="# Netscape HTTP Cookie File&#10;.xiaohongshu.com	TRUE	/	FALSE	0	web_session	xxxx&#10;.twitter.com	TRUE	/	FALSE	0	auth_token	xxxx"></textarea>
+    <div class="row">
+      <button class="act ghost" id="cookieClear">清除</button>
+      <button class="act" id="modalClose">取消</button>
+      <button class="act primary" id="cookieSave">保存配置</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const PLATFORMS = {
+  youtube:    { label: "YouTube",    color: "#ff0033", bg: "rgba(255,0,51,.12)" },
+  bilibili:   { label: "B站",        color: "#fb7299", bg: "rgba(251,114,153,.12)" },
+  douyin:     { label: "抖音",       color: "#ffffff", bg: "rgba(255,255,255,.1)" },
+  tiktok:     { label: "TikTok",     color: "#69c9d0", bg: "rgba(105,201,208,.12)" },
+  xhs:        { label: "小红书",     color: "#ff2442", bg: "rgba(255,36,66,.12)" },
+  instagram:  { label: "Instagram",  color: "#e1306c", bg: "rgba(225,48,108,.14)" },
+  twitter:    { label: "X / Twitter",color: "#9ca3af", bg: "rgba(156,163,175,.12)" },
+  weibo:      { label: "微博",       color: "#e6162d", bg: "rgba(230,22,45,.12)" },
+  kuaishou:   { label: "快手",       color: "#ff4906", bg: "rgba(255,73,6,.12)" },
+  wechat:     { label: "视频号",     color: "#07c160", bg: "rgba(7,193,96,.12)" },
+  other:      { label: "其他平台",   color: "#8b94a7", bg: "rgba(139,148,167,.12)" },
+};
+const VIDEO_EXTS = ["mp4", "webm", "mkv", "mov", "flv", "m4a", "mp3"];
+const EXAMPLES = [
+  "https://www.bilibili.com/video/BV1GJ411x7h7",
+  "https://v.douyin.com/xxxxxx/",
+  "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+];
+const $ = s => document.querySelector(s);
+let tasks = [];
+let toastTimer = null;
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+function badge(platform) {
+  const p = PLATFORMS[platform] || PLATFORMS.other;
+  const b = el("span", "badge", p.label);
+  b.style.color = p.color;
+  b.style.background = p.bg;
+  return b;
+}
+function extOf(file) { return (file || "").split(".").pop().toLowerCase(); }
+function fmtSize(n) {
+  if (n == null) return "";
+  if (n > 1073741824) return (n / 1073741824).toFixed(2) + " GB";
+  if (n > 1048576) return (n / 1048576).toFixed(1) + " MB";
+  return (n / 1024).toFixed(0) + " KB";
+}
+function fmtEta(s) {
+  if (s == null) return "";
+  s = Math.round(s);
+  if (s < 60) return s + " 秒";
+  const m = Math.floor(s / 60), sec = s % 60;
+  return `${m}分${sec}秒`;
+}
+
+function renderChips() {
+  const wrap = $("#chips");
+  wrap.innerHTML = "";
+  for (const key of ["youtube", "bilibili", "douyin", "tiktok", "xhs", "instagram", "twitter", "weibo", "kuaishou", "wechat"]) {
+    const p = PLATFORMS[key];
+    wrap.appendChild(el("span", "chip", p.label));
+  }
+  wrap.appendChild(el("span", "chip", "… 1000+ 平台"));
+}
+
+function renderStats() {
+  const count = s => tasks.filter(t => t.status === s).length;
+  const wrap = $("#stats");
+  wrap.innerHTML = "";
+  const items = [["全部", tasks.length], ["下载中", count("downloading")], ["排队", count("queued")],
+                 ["完成", count("done")], ["失败", count("error")]];
+  if (!tasks.length) return;
+  for (const [label, n] of items) {
+    const s = el("span", "stat");
+    s.appendChild(document.createTextNode(label + " "));
+    s.appendChild(el("b", "", String(n)));
+    wrap.appendChild(s);
+  }
+}
+
+function renderTasks() {
+  const list = $("#list");
+  list.innerHTML = "";
+  if (!tasks.length) {
+    const empty = el("div", "empty", "还没有下载任务，把链接粘贴到上方输入框试试");
+    const ex = el("div", "ex");
+    empty.appendChild(ex);
+    for (const url of EXAMPLES) {
+      const b = el("button", "", "试试：" + url);
+      b.onclick = () => { $("#input").value = url; autoGrow(); $("#input").focus(); };
+      ex.appendChild(b);
+    }
+    list.appendChild(empty);
+    return;
+  }
+  for (const t of tasks) list.appendChild(renderTask(t));
+}
+
+function renderTask(t) {
+  const card = el("div", "task");
+  // thumb
+  const thumb = el("div", "thumb");
+  if (t.thumbnail) {
+    const img = document.createElement("img");
+    img.src = t.thumbnail;
+    img.referrerPolicy = "no-referrer";
+    img.onerror = () => { thumb.innerHTML = ""; thumb.appendChild(placeholderIcon()); };
+    thumb.appendChild(img);
+  } else {
+    thumb.appendChild(placeholderIcon());
+  }
+  card.appendChild(thumb);
+  // body
+  const body = el("div", "body");
+  const top = el("div", "top");
+  top.appendChild(badge(t.platform));
+  const st = el("span", "badge");
+  const statusMap = { queued: ["排队中", "#fbbf24"], downloading: ["下载中", "#22d3ee"],
+                      done: ["已完成", "#34d399"], error: ["失败", "#f87171"], cancelled: ["已取消", "#8b94a7"] };
+  const [stLabel, stColor] = statusMap[t.status] || [t.status, "#8b94a7"];
+  st.textContent = stLabel;
+  st.style.color = stColor;
+  st.style.background = "rgba(255,255,255,.05)";
+  top.appendChild(st);
+  body.appendChild(top);
+  body.appendChild(el("div", "title", t.title || t.url));
+  body.appendChild(el("div", "url", t.url));
+
+  if (t.status === "downloading") {
+    const pct = t.progress != null ? Math.round(t.progress) : null;
+    const bar = el("div", "bar" + (pct == null ? " indet" : ""));
+    const fill = el("div", "fill");
+    if (pct != null) fill.style.width = pct + "%";
+    bar.appendChild(fill);
+    body.appendChild(bar);
+    const meta = el("div", "meta");
+    if (pct != null) meta.appendChild(el("span", "", pct + "%"));
+    if (t.speed) meta.appendChild(el("span", "", t.speed));
+    if (t.eta != null) meta.appendChild(el("span", "", "剩余 " + fmtEta(t.eta)));
+    body.appendChild(meta);
+  }
+  if (t.status === "done") {
+    const meta = el("div", "meta");
+    meta.appendChild(el("span", "", fmtSize(t.size)));
+    meta.appendChild(el("span", "", "已保存到本地 downloads"));
+    body.appendChild(meta);
+  }
+  if (t.status === "error") {
+    body.appendChild(el("div", "err-msg", t.error || "未知错误"));
+  }
+  card.appendChild(body);
+  // actions
+  const actions = el("div", "actions");
+  if (t.status === "done") {
+    const ext = extOf(t.file);
+    if (VIDEO_EXTS.includes(ext)) {
+      const play = el("button", "act primary", "▶ 播放");
+      play.onclick = () => openWithPlayer(t);
+      actions.appendChild(play);
+    }
+    const dl = el("button", "act", "⬇ 下载");
+    dl.onclick = () => saveAs(t);
+    actions.appendChild(dl);
+  }
+  if (t.status === "error") {
+    const retry = el("button", "act", "↻ 重试");
+    retry.onclick = () => submitUrls([t.url]);
+    actions.appendChild(retry);
+  }
+  if (t.status === "queued") {
+    const cancel = el("button", "act danger", "✕ 取消");
+    cancel.onclick = async () => {
+      await fetch(`/api/tasks/${t.id}/cancel`, { method: "POST" });
+      refresh();
+    };
+    actions.appendChild(cancel);
+  }
+  card.appendChild(actions);
+  return card;
+}
+
+function placeholderIcon() {
+  const ph = el("span", "ph");
+  ph.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M10 9l5 3-5 3V9z"/></svg>`;
+  return ph;
+}
+
+async function openWithPlayer(t) {
+  try {
+    const r = await fetch(`/api/files/${t.id}/open`, { method: "POST" });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      toast(d.detail || "打开失败");
+      return;
+    }
+    toast("已用系统默认播放器打开");
+  } catch (e) {
+    toast("打开失败，请确认服务已启动");
+  }
+}
+
+async function saveAs(t) {
+  const filename = (t.file || "").split("/").pop() || "video.mp4";
+  try {
+    const resp = await fetch(`/api/files/${t.id}?dl=1`);
+    if (!resp.ok) {
+      const d = await resp.json().catch(() => ({}));
+      toast(d.detail || "下载失败");
+      return;
+    }
+    const blob = await resp.blob();
+    // 首选系统「另存为」对话框，自选保存路径
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({ suggestedName: filename });
+        const w = await handle.createWritable();
+        await w.write(blob);
+        await w.close();
+        toast("已保存到所选位置");
+        return;
+      } catch (e) {
+        if (e && e.name === "AbortError") return;  // 用户取消，静默
+        // 其它错误降级到浏览器默认下载
+      }
+    }
+    // 降级：浏览器默认下载
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } catch (e) {
+    toast("下载失败，请确认服务已启动");
+  }
+}
+
+async function refresh() {
+  try {
+    const r = await fetch("/api/tasks");
+    tasks = (await r.json()).tasks;
+    renderStats();
+    renderTasks();
+  } catch (e) { /* 服务未就绪时静默 */ }
+}
+
+async function submitUrls(urls) {
+  try {
+    const r = await fetch("/api/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: urls.join("\n") }),
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      toast(d.detail || "提交失败");
+      return;
+    }
+    const d = await r.json();
+    toast(`已加入 ${d.tasks.length} 个下载任务`);
+    await refresh();
+  } catch (e) {
+    toast("服务连接失败，请确认后端已启动");
+  }
+}
+
+function autoGrow() {
+  const ta = $("#input");
+  ta.style.height = "auto";
+  ta.style.height = Math.min(ta.scrollHeight, 150) + "px";
+}
+
+// ---------- events ----------
+$("#goBtn").onclick = () => {
+  const text = $("#input").value.trim();
+  if (!text) { toast("先粘贴一个视频链接"); return; }
+  const urls = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  submitUrls(urls);
+  $("#input").value = "";
+  autoGrow();
+};
+$("#input").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#goBtn").click(); }
+});
+$("#input").addEventListener("input", autoGrow);
+
+// settings modal
+$("#settingsBtn").onclick = async () => {
+  try {
+    const st = await (await fetch("/api/cookies")).json();
+    $("#cookieDot").className = "cookie-dot" + (st.configured ? " on" : "");
+    $("#cookieDot").lastChild.textContent = st.configured ? "Cookies 已配置" : "Cookies 未配置";
+  } catch (e) {}
+  $("#overlay").classList.add("show");
+};
+$("#modalClose").onclick = () => $("#overlay").classList.remove("show");
+$("#overlay").addEventListener("click", e => { if (e.target === $("#overlay")) $("#overlay").classList.remove("show"); });
+$("#cookieSave").onclick = async () => {
+  const content = $("#cookieInput").value.trim();
+  const r = await fetch("/api/cookies", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  const d = await r.json();
+  $("#overlay").classList.remove("show");
+  toast(d.configured ? "Cookies 已保存，下次下载生效" : "Cookies 已清除");
+  const st = d;
+  $("#cookieDot").className = "cookie-dot" + (st.configured ? " on" : "");
+  $("#cookieDot").lastChild.textContent = st.configured ? "Cookies 已配置" : "Cookies 未配置";
+};
+$("#cookieClear").onclick = () => { $("#cookieInput").value = ""; };
+
+// init
+renderChips();
+refresh();
+setInterval(refresh, 800);
+</script>
+</body>
+</html>
