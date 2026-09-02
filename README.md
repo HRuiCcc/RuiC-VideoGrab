@@ -30,19 +30,34 @@
 
 ## 🚀 快速开始
 
+### macOS / Linux
+
 ```bash
 ./run.sh
 # 打开 http://127.0.0.1:8900
 ```
 
-首次运行自动：创建 venv → 安装依赖 → 安装无头 Chromium（抖音下载用，约 95MB）。需要本机有 Python 3.10+（macOS 自带 ffmpeg 更佳，用于音视频合并）。
+### Windows
 
-手动方式：
+双击 **`run.bat`**（或 PowerShell 运行 `.\run.bat`），自动打开 http://127.0.0.1:8900。
+
+首次运行自动：创建 venv → 安装依赖 → 安装无头 Chromium（抖音下载用，约 95MB）。
+
+**环境要求**：Python 3.10+。建议安装 [ffmpeg](https://ffmpeg.org/download.html)（音视频合并用）：
+
+```powershell
+# Windows 推荐用 winget 安装 ffmpeg
+winget install Gyan.FFmpeg
+```
+
+macOS：`brew install ffmpeg`（多数 Mac 已自带）。
+
+### 手动方式（全平台）
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/playwright install chromium   # 抖音下载依赖
+python3 -m venv .venv          # Windows: py -3 -m venv .venv
+.venv/bin/pip install -r requirements.txt        # Windows: .venv\Scripts\pip
+.venv/bin/playwright install chromium            # 抖音下载依赖
 .venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8900
 ```
 
@@ -61,7 +76,7 @@ python3 -m venv .venv
 .venv/bin/python -m pytest tests/ -q
 ```
 
-73 个测试覆盖：平台识别、任务队列/并发/状态流转、引擎路由、B站自举、412 重试、合并竞态恢复、成品路径选择、抖音提取纯函数、小红书 xsec_token/非标准 JSON 解析、系统打开与路径安全。
+75 个测试覆盖：平台识别、任务队列/并发/状态流转、引擎路由、B站自举、412 重试、合并竞态恢复、成品路径选择、抖音提取纯函数、小红书 xsec_token/非标准 JSON 解析、系统打开（macOS/Windows/Linux 三平台）与路径安全。
 
 ## 🏗️ 架构
 

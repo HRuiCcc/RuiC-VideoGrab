@@ -28,6 +28,38 @@ def test_open_with_system_app_uses_open_on_darwin(tmp_path, monkeypatch):
     assert calls[0][1] == str(f)
 
 
+def test_open_with_system_app_uses_startfile_on_windows(tmp_path, monkeypatch):
+    f = tmp_path / "v.mp4"
+    f.write_bytes(b"x")
+    opened = []
+
+    import types
+    import backend.main as backend_main
+    fake_os = types.SimpleNamespace(
+        path=types.SimpleNamespace(exists=lambda p: True),
+        startfile=lambda p: opened.append(p))
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setattr(backend_main, "os", fake_os)
+    open_with_system_app(str(f))
+    assert opened == [str(f)]
+
+
+def test_open_with_system_app_uses_xdg_open_on_linux(tmp_path, monkeypatch):
+    f = tmp_path / "v.mp4"
+    f.write_bytes(b"x")
+    calls = []
+
+    def fake_run(cmd, **kw):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    open_with_system_app(str(f))
+    assert calls and calls[0][0] == "xdg-open"
+    assert calls[0][1] == str(f)
+
+
 def test_open_with_system_app_raises_when_file_missing(tmp_path):
     with pytest.raises(FileNotFoundError):
         open_with_system_app(str(tmp_path / "nope.mp4"))
