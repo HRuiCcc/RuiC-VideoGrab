@@ -101,6 +101,38 @@ python3 -m venv .venv          # Windows: py -3 -m venv .venv
 3. 导出 **Netscape 格式** cookie
 4. 打开页面右上角 ⚙ 设置 → 粘贴 → 保存（多个平台可合并粘贴）
 
+## ⚙️ 工作原理
+
+```mermaid
+flowchart LR
+    A[粘贴链接<br>单条或批量多行] --> B[平台识别<br>platforms.py 域名规则]
+    B --> C{引擎路由}
+    C -- 抖音 --> D[DouyinEngine<br>Playwright 真浏览器<br>监听 aweme_detail 过风控]
+    C -- 小红书 --> E[XhsEngine<br>xsec_token 解析<br>非标准 JSON 容错]
+    C -- B站 --> F[YtDlpEngine + 自举<br>buvid3/buvid4 绕 412<br>间歇自动重试]
+    C -- 其他 1000+ 站点 --> G[YtDlpEngine<br>通用提取]
+    D --> H[媒体直链 / 图集]
+    E --> H
+    F --> H
+    G --> H
+    H --> I[TaskManager<br>队列 · 并发 2 · 持久化]
+    I --> J[下载落盘<br>downloads 任务目录]
+    J --> K{图集?}
+    K -- 是 --> L[自动打包 zip]
+    K -- 否 --> M[成品文件]
+    L --> M
+    M --> N[历史记录<br>data/history.json]
+    N --> O[播放 / 另存<br>系统播放器 / 系统对话框]
+```
+
+核心链路要点：
+
+- **平台识别**：纯函数按域名规则命中平台，再路由到对应引擎
+- **抖音**：真浏览器访问模拟正常用户，监听 `aweme_detail` 接口直取无水印链接，免登录免 cookie
+- **小红书**：兼容带 `xsec_token` 的分享链接，解析层容错非标准 JSON
+- **B站**：命中 412 风控时自动申请 `buvid3/buvid4` cookie 自举，间歇发作自动重试
+- **统一 Engine 接口**：所有引擎对齐同一接口，任务管理器不感知平台差异，新增适配器零改动接入
+
 ## 🏗️ 架构
 
 ```
