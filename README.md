@@ -133,6 +133,33 @@ flowchart LR
 - **B站**：命中 412 风控时自动申请 `buvid3/buvid4` cookie 自举，间歇发作自动重试
 - **统一 Engine 接口**：所有引擎对齐同一接口，任务管理器不感知平台差异，新增适配器零改动接入
 
+## ⚙️ 工作原理
+
+```mermaid
+flowchart LR
+    A[粘贴链接<br>单条或批量多行] --> B[平台识别<br>域名正则匹配 platforms.py]
+    B --> C{小红书?}
+    C -- 是 --> D[XhsEngine<br>xsec_token 直连 + INITIAL_STATE JSON]
+    C -- 否 --> E{抖音?}
+    E -- 是 --> F[DouyinEngine<br>Playwright 真浏览器拦截 aweme_detail]
+    E -- 否 --> G[YtDlpEngine<br>yt-dlp 1000+ 站点 + JS 挑战求解]
+    D --> H[下载落盘<br>进度 / 速度 / ETA 实时回写]
+    F --> H
+    G --> H
+    H --> I[任务状态机<br>队列 · 并发2 · 历史持久化]
+    I --> J{播放 / 下载?}
+    J -- 播放 --> K[系统播放器<br>open / startfile / xdg-open]
+    J -- 下载 --> L[另存为对话框<br>showSaveFilePicker 自选路径]
+```
+
+核心链路要点：
+
+- **先识别后路由**：纯函数域名匹配把链接分成「小红书 / 抖音 / 其它」，前两者走专用适配器，其余交给 yt-dlp 通用引擎兜底，未知平台也能尝试
+- **抖音免登录**：真 Chromium 内核天然携带浏览器指纹过风控，页面 JS 自行请求 `aweme/detail`，引擎拦截响应提取无水印直链
+- **小红书带 token 直连**：保留分享链接里的 `xsec_token` 访问笔记页，解析时容错非标准 `undefined` JSON
+- **B站自举抗风控**：命中 412 自动申请 `buvid3/buvid4` 游客 cookie，间歇性风控自动刷新重试，合并后的竞态残留也能自恢复
+- **任务层与引擎解耦**：统一 `Engine` 接口，队列/并发/持久化只面向接口调度，新增平台适配器零改动接入
+
 ## 🏗️ 架构
 
 ```
