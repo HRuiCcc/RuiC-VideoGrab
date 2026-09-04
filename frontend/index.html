@@ -87,7 +87,6 @@
   .task .top { display: flex; align-items: center; gap: 8px; }
   .badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px; flex-shrink: 0; }
   .task .title { font-size: 14px; font-weight: 600; margin-top: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .task .url { font-size: 12px; color: var(--dim); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .task .meta { display: flex; gap: 12px; align-items: center; margin-top: 8px; font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; }
   .bar { height: 6px; background: var(--panel2); border-radius: 999px; overflow: hidden; margin-top: 8px; }
   .bar .fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .4s ease; }
@@ -102,9 +101,6 @@
   .err-msg { color: var(--err); font-size: 12.5px; margin-top: 7px; line-height: 1.5; }
 
   .empty { text-align: center; color: var(--dim); padding: 40px 0; font-size: 13.5px; }
-  .empty .ex { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
-  .empty .ex button { background: var(--panel); color: var(--dim); border: 1px solid var(--line); font-size: 12px; padding: 7px 14px; border-radius: 999px; cursor: pointer; font-family: inherit; }
-  .empty .ex button:hover { color: var(--accent2); border-color: var(--accent); }
 
   footer { text-align: center; color: #4a5266; font-size: 12px; margin-top: 48px; line-height: 1.8; }
 
@@ -192,11 +188,6 @@ const PLATFORMS = {
   other:      { label: "其他平台",   color: "#8b94a7", bg: "rgba(139,148,167,.12)" },
 };
 const VIDEO_EXTS = ["mp4", "webm", "mkv", "mov", "flv", "m4a", "mp3"];
-const EXAMPLES = [
-  "https://www.bilibili.com/video/BV1GJ411x7h7",
-  "https://v.douyin.com/xxxxxx/",
-  "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-];
 const $ = s => document.querySelector(s);
 let tasks = [];
 let toastTimer = null;
@@ -265,15 +256,7 @@ function renderTasks() {
   const list = $("#list");
   list.innerHTML = "";
   if (!tasks.length) {
-    const empty = el("div", "empty", "还没有下载任务，把链接粘贴到上方输入框试试");
-    const ex = el("div", "ex");
-    empty.appendChild(ex);
-    for (const url of EXAMPLES) {
-      const b = el("button", "", "试试：" + url);
-      b.onclick = () => { $("#input").value = url; autoGrow(); $("#input").focus(); };
-      ex.appendChild(b);
-    }
-    list.appendChild(empty);
+    list.appendChild(el("div", "empty", "还没有下载任务，把链接粘贴到上方输入框试试"));
     return;
   }
   for (const t of tasks) list.appendChild(renderTask(t));
@@ -306,8 +289,7 @@ function renderTask(t) {
   st.style.background = "rgba(255,255,255,.05)";
   top.appendChild(st);
   body.appendChild(top);
-  body.appendChild(el("div", "title", t.title || t.url));
-  body.appendChild(el("div", "url", t.url));
+  body.appendChild(el("div", "title", t.title || (PLATFORMS[t.platform] || PLATFORMS.other).label));
 
   if (t.status === "downloading") {
     const pct = t.progress != null ? Math.round(t.progress) : null;
