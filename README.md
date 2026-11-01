@@ -260,4 +260,6 @@ B站的风控状态码。本项目会自动申请 buvid cookie 自举并间歇�
   <img src="assets/wechat-donate.png" width="300" alt="微信赞赏码" />
   <br>
   <sub>微信扫码赞赏</sub>
+  <br>
+  <sub>微号：hrc_rch（说明来意）</sub>
 </div>
